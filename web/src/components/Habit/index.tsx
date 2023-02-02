@@ -4,7 +4,7 @@ interface HabitProps {
 
 export function Habit({ completed }: HabitProps) {
   return (
-    <div className="bg-zinc-300">
+    <div className='bg-zinc-900 w-10 h-10 text-white rounded m-2 flex items-center justify-center'>
       Habits completed: {completed}
     </div>
   )
