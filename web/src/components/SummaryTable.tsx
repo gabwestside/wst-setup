@@ -7,6 +7,9 @@ const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const summaryDates = generateDatesFromYearBeginning()
 
+const minimumSummaryDatesSize = 18 * 7
+const amountOfDaysToFill = minimumSummaryDatesSize - summaryDates.length
+
 export function SummaryTable(props: SummaryTableProps) {
   return (
     <div className='w-full flex'>
@@ -27,6 +30,16 @@ export function SummaryTable(props: SummaryTableProps) {
         {summaryDates.map((day) => {
           return <HabitDay key={day.toString()} />
         })}
+
+        {amountOfDaysToFill > 0 &&
+          Array.from({ length: amountOfDaysToFill }).map((_, index) => {
+            return (
+              <div
+                key={index}
+                className='w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-40 cursor-not-allowed'
+              />
+            )
+          })}
       </div>
     </div>
   )
