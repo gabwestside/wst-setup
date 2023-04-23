@@ -10,9 +10,7 @@ const datesFromYearStart = generateDatesFromYearBeginning()
 const minimumSummaryDatesSizes = 18 * 5
 const amountOfDaysToFill = minimumSummaryDatesSizes + datesFromYearStart.length
 
-export function Home() {
-  console.log(amountOfDaysToFill);
-  
+export function Home() {  
   return (
     <View className='flex-1 bg-background px-8 pt-16'>
       <Header />
