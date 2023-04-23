@@ -8,10 +8,10 @@ import { HabitDay, DAY_SIZE } from '../components/HabitDay'
 const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 const datesFromYearStart = generateDatesFromYearBeginning()
 const minimumSummaryDatesSizes = 18 * 5
-const amountOfDaysToFill = minimumSummaryDatesSizes - datesFromYearStart.length
+const amountOfDaysToFill = minimumSummaryDatesSizes + datesFromYearStart.length
 
 export function Home() {
-  console.log(datesFromYearStart.length);
+  console.log(amountOfDaysToFill);
   
   return (
     <View className='flex-1 bg-background px-8 pt-16'>
@@ -42,17 +42,18 @@ export function Home() {
             ))
           }
 
-        </View>
           {
             amountOfDaysToFill > 0 && Array
               .from({ length: amountOfDaysToFill })
               .map((_, index) => (
                 <View
-                  className='bg-zinc-900 rounded-lg border-2 m-1 border-zinc-800 opacity-40'
+                  key={index}
+                  className='bg-zinc-800 rounded-lg border-2 m-1 border-zinc-700 opacity-40'
                   style={{ width: DAY_SIZE, height: DAY_SIZE }}
                 />
               ))
           }
+        </View>
       </ScrollView>
     </View>
   )
