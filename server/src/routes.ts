@@ -96,5 +96,33 @@ export async function appRoutes(app: FastifyInstance) {
         }
       })
     }
+
+    const dayHabit = await prisma.dayHabit.findUnique({
+      where: {
+        day_id_habit_id: {
+          day_id: day.id,
+          habit_id: id,
+        }
+      }
+    })
+
+    if (dayHabit) {
+      // remove a completed mark
+      await prisma.dayHabit.delete({
+        where: {
+          id: dayHabit.id,
+        }
+      })
+    } else {
+      // complete the habit
+      await prisma.dayHabit.create({
+        data: {
+          day_id: day.id,
+          habit_id: id
+        }
+      })
+    }
+
+    
   })
 }
