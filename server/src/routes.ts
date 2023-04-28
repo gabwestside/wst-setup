@@ -86,14 +86,14 @@ export async function appRoutes(app: FastifyInstance) {
     let day = await prisma.day.findUnique({
       where: {
         date: today,
-      }
+      },
     })
 
     if (!day) {
       day = await prisma.day.create({
         data: {
           date: today,
-        }
+        },
       })
     }
 
@@ -102,8 +102,8 @@ export async function appRoutes(app: FastifyInstance) {
         day_id_habit_id: {
           day_id: day.id,
           habit_id: id,
-        }
-      }
+        },
+      },
     })
 
     if (dayHabit) {
@@ -111,18 +111,27 @@ export async function appRoutes(app: FastifyInstance) {
       await prisma.dayHabit.delete({
         where: {
           id: dayHabit.id,
-        }
+        },
       })
     } else {
       // complete the habit
       await prisma.dayHabit.create({
         data: {
           day_id: day.id,
-          habit_id: id
-        }
+          habit_id: id,
+        },
       })
     }
+  })
 
-    
+  app.get('/summary', async () => {
+    // [ { date: 17/01, amount: 5, completed: 1 }, { date: 18/01, amount: 2, completed: 2 }, {}]
+    // Prisma ORM: RAW SQL => SQLite
+
+    const summary = await prisma.$queryRaw`
+      SELECT * FROM days
+    `
+
+    return summary
   })
 }
