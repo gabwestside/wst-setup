@@ -1,16 +1,14 @@
 import { HabitDay } from './HabitDay'
 import { generateDatesFromYearBeginning } from '../utils/generate-dates-from-year-beginning.ts'
 
-interface SummaryTableProps {}
-
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const summaryDates = generateDatesFromYearBeginning()
 
-const minimumSummaryDatesSize = 18 * 7
+const minimumSummaryDatesSize = 18 * 9 // this logic it's change
 const amountOfDaysToFill = minimumSummaryDatesSize - summaryDates.length
 
-export function SummaryTable(props: SummaryTableProps) {
+export function SummaryTable() {
   return (
     <div className='w-full flex'>
       <div className='grid grid-rows-7 grid-flow-row gap-3'>
@@ -28,7 +26,13 @@ export function SummaryTable(props: SummaryTableProps) {
 
       <div className='grid grid-rows-7 grid-flow-col gap-3'>
         {summaryDates.map((day) => {
-          return <HabitDay key={day.toString()} />
+          return (
+            <HabitDay
+              key={day.toString()}
+              amount={5}
+              completed={Math.round(Math.random() * 5)}
+            />
+          )
         })}
 
         {amountOfDaysToFill > 0 &&
