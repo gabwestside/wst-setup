@@ -5,7 +5,7 @@ import { generateDatesFromYearBeginning } from '../utils/generate-dates-from-yea
 import { Header } from '../components/Header'
 import { HabitDay, DAY_SIZE } from '../components/HabitDay'
 
-const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const datesFromYearStart = generateDatesFromYearBeginning()
 const minimumSummaryDatesSizes = 18 * 5
 const amountOfDaysToFill = minimumSummaryDatesSizes + datesFromYearStart.length
