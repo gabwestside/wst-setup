@@ -31,7 +31,10 @@ export function New() {
 
   return (
     <View className='flex-1 bg-background px-9 pt-16'>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <BackButton />
 
         <Text className='mt-6 text-white font-extrabold text-3xl'>
@@ -43,7 +46,7 @@ export function New() {
         </Text>
 
         <TextInput 
-          className='h-12 pl-4 rounded-lg mt-3 bg-zinc-800 text-white focus:border-2 focus:border-green-600' 
+          className='h-12 pl-4 rounded-lg mt-3 bg-zinc-900 text-white border-2 border-zinc-800 focus:border-2 focus:border-green-600' 
           placeholder='Exercises, sleep well, etc...'
           placeholderTextColor={colors.zinc['400']}
         />
