@@ -1,4 +1,5 @@
 import './styles/global.css';
+// import './lib/dayjs' // if I want to translate to portuguese 
 
 import { Header } from './components/Header';
 import { SummaryTable } from './components/SummaryTable';
