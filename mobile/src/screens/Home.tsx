@@ -4,10 +4,10 @@ import { generateDatesFromYearBeginning } from '../utils/generate-dates-from-yea
 
 import { api } from '../lib/axios'
 import { Header } from '../components/Header'
+import { Loading } from '../components/Loading'
 import { useNavigation } from '@react-navigation/native'
 import { HabitDay, DAY_SIZE } from '../components/HabitDay'
 import { useEffect, useState } from 'react'
-import { Loading } from '../components/Loading'
 
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const datesFromYearStart = generateDatesFromYearBeginning()
@@ -20,11 +20,10 @@ export function Home() {
 
   const { navigate } = useNavigation()
 
-  async function fetchData() {
+  async function getSummary() {
     try {
       setLoading(true)
       const response = await api.get('/summary')
-      console.log('2123123', response)
       setSummary(response.data)
     } catch (error) {
       Alert.alert('Oops', 'Unable to load habit summary.')
@@ -35,7 +34,7 @@ export function Home() {
   }
 
   useEffect(() => {
-    fetchData()
+    getSummary()
   }, [])
 
   if (loading) {
