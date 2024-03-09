@@ -35,7 +35,7 @@ export function Home() {
       setSummary(response.data)
     } catch (error) {
       Alert.alert('Oops', 'Unable to load habit summary.')
-      console.log(error)
+      console.log(JSON.stringify(error))
     } finally {
       setLoading(false)
     }
@@ -69,36 +69,32 @@ export function Home() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {summary && (
-          <View className='flex-row flex-wrap'>
-            {datesFromYearStart.map((date) => {
-              const dayWithHabits = summary.find((day) => {
-                return dayjs(date).isSame(day.date, 'day')
-              })
+        <View className='flex-row flex-wrap'>
+          {datesFromYearStart.map((date, index) => {
+            const dayWithHabits = summary?.find((day) => {
+              return dayjs(date).isSame(day.date, 'day')
+            })
 
-              return (
-                <HabitDay
-                  date={date}
-                  amountOfHabits={dayWithHabits?.amount}
-                  amountCompleted={dayWithHabits?.completed}
-                  key={date.toISOString()}
-                  onPress={() =>
-                    navigate('habit', { date: date.toISOString() })
-                  }
-                />
-              )
-            })}
+            return (
+              <HabitDay
+                key={index}
+                date={date ?? new Date()}
+                amountOfHabits={dayWithHabits?.amount}
+                amountCompleted={dayWithHabits?.completed}
+                onPress={() => navigate('habit', { date: date.toISOString() })}
+              />
+            )
+          })}
 
-            {amountOfDaysToFill > 0 &&
-              Array.from({ length: amountOfDaysToFill }).map((_, index) => (
-                <View
-                  key={index}
-                  className='bg-zinc-900 rounded-lg border-2 m-1 border-zinc-700 opacity-40'
-                  style={{ width: DAY_SIZE, height: DAY_SIZE }}
-                />
-              ))}
-          </View>
-        )}
+          {amountOfDaysToFill > 0 &&
+            Array.from({ length: amountOfDaysToFill }).map((_, index) => (
+              <View
+                key={index}
+                className='bg-zinc-900 rounded-lg border-2 m-1 border-zinc-700 opacity-40'
+                style={{ width: DAY_SIZE, height: DAY_SIZE }}
+              />
+            ))}
+        </View>
       </ScrollView>
     </View>
   )
