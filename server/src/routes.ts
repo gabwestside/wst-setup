@@ -61,7 +61,7 @@ export async function appRoutes(app: FastifyInstance) {
       },
     })
 
-    const completedHabits = day?.dayHabits.map((dayHabit) => {
+    const completedHabits = day?.dayHabits.map((dayHabit: { habit_id: string }) => {
       return dayHabit.habit_id
     })
 
