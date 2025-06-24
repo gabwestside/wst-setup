@@ -1,12 +1,13 @@
-import { HabitDay } from './HabitDay'
-import { generateDatesFromYearBeginning } from '../utils/generate-dates-from-year-beginning.ts'
+import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
 import { api } from '../lib/axios'
-import dayjs from 'dayjs'
+import { generateDatesFromCurrentMonth } from '../utils/generate-dates'
+import { HabitDay } from './HabitDay'
 
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-const summaryDates = generateDatesFromYearBeginning()
+// const summaryDates = generateDatesFromYearBeginning()
+const summaryDates = generateDatesFromCurrentMonth()
 
 const minimumSummaryDatesSize = 18 * 7
 const amountOfDaysToFill = minimumSummaryDatesSize - summaryDates.length
