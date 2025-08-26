@@ -1,13 +1,13 @@
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/axios'
-import { generateDatesFromCurrentMonth } from '../utils/generate-dates'
+import { generateDatesFromYearBeginning } from '../utils/generate-dates'
 import { HabitDay } from './HabitDay'
 
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const summaryDates = generateDatesFromCurrentMonth()
+const summaryDates = generateDatesFromYearBeginning()
 
-const minimumSummaryDatesSize = 18 * 7
+const minimumSummaryDatesSize = 50 * 7 // 30 weeks
 const amountOfDaysToFill = minimumSummaryDatesSize - summaryDates.length
 
 type SummaryItem = {
@@ -66,7 +66,23 @@ export function SummaryTable() {
         ))}
       </div>
 
-      <div className='grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col'>
+      <div
+        className='grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col overflow-x-auto md:overflow-x-visible max-w-full'
+        ref={(el) => {
+          // Scroll to current week on mount
+          if (el) {
+            const today = dayjs()
+            const startOfWeek = today.startOf('week')
+            const weekIndex = summaryDates.findIndex((date) =>
+              dayjs(date).isSame(startOfWeek, 'day')
+            )
+            if (weekIndex !== -1) {
+              // Each cell is ~2.5rem wide (w-10 + gap), adjust as needed
+              el.scrollLeft = weekIndex * 44
+            }
+          }
+        }}
+      >
         {summaryDates.map((date) => {
           const key = dayjs(date).format('YYYY-MM-DD')
           const s = summaryByKey.get(key)
