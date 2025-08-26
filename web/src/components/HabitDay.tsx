@@ -3,22 +3,37 @@ import { ProgressBar } from './ProgressBar'
 import dayjs from 'dayjs'
 import clsx from 'clsx'
 import { HabitsList } from './HabitsList'
+import { useEffect, useState } from 'react'
 
 interface HabitDayProps {
   date: Date
   completed?: number
   amount?: number
+  onCompletedChange?: (date: Date, delta: number) => void
 }
 
-export function HabitDay({ completed = 0, amount = 0, date }: HabitDayProps) {
+export function HabitDay({
+  completed = 0,
+  amount = 0,
+  date,
+  onCompletedChange,
+}: HabitDayProps) {
+  const [localCompleted, setLocalCompleted] = useState(completed)
+
+  // se props.completed mudar (ex.: troca de mês), sincroniza:
+  useEffect(() => setLocalCompleted(completed), [completed])
+
   const completedPercentage =
-    amount > 0 ? Math.round((completed / amount) * 100) : 0
+    amount > 0 ? Math.round((localCompleted / amount) * 100) : 0
 
   const dayAndMonth = dayjs(date).format('DD/MM')
   const dayOfWeek = dayjs(date).format('dddd')
+  const isCurrentDay = dayjs(date).isSame(dayjs().startOf('day'), 'day')
 
-  const today = dayjs().startOf('day').toDate()
-  const isCurrentDay = dayjs(date).isSame(today)
+  function handleDelta(delta: number) {
+    setLocalCompleted((c) => Math.max(0, Math.min(amount, c + delta)))
+    onCompletedChange?.(date, delta)
+  }
 
   return (
     <Popover.Root>
@@ -44,9 +59,10 @@ export function HabitDay({ completed = 0, amount = 0, date }: HabitDayProps) {
           <span className='mt-1 font-extrabold leading-tight text-3xl'>
             {dayAndMonth}
           </span>
+
           <ProgressBar progress={completedPercentage} />
 
-          <HabitsList date={date} />
+          <HabitsList date={date} onChangeCompleted={handleDelta} />
 
           <Popover.Arrow height={8} width={16} className='fill-zinc-800' />
         </Popover.Content>

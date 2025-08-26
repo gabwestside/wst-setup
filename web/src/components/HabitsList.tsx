@@ -4,9 +4,11 @@ import { Check, Trash } from 'phosphor-react'
 import { useEffect, useState } from 'react'
 import { api } from '../lib/axios'
 import dayjs from 'dayjs'
+import { useToast } from './ToastProvider'
 
 interface HabitsListProps {
   date: Date
+  onChangeCompleted?: (delta: number) => void
 }
 
 type HabitsInfo = {
@@ -18,35 +20,53 @@ type HabitsInfo = {
   completedHabits: string[]
 }
 
-export function HabitsList({ date }: HabitsListProps) {
+export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
+  const { showToast } = useToast()
   const [habitsInfo, setHabitsInfo] = useState<HabitsInfo>()
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  
-  const isPastOrToday = dayjs(date).endOf('day').isBefore(dayjs().endOf('day')) || dayjs(date).isSame(dayjs(), 'day')
+
+  const isPastOrToday =
+    dayjs(date).endOf('day').isBefore(dayjs().endOf('day')) ||
+    dayjs(date).isSame(dayjs(), 'day')
 
   useEffect(() => {
     api
       .get('day', { params: { date: date.toISOString() } })
       .then((r) => setHabitsInfo(r.data))
   }, [date])
-  
 
   async function handleToggle(habitId: string) {
     if (!habitsInfo) return
     // otimista
     const isCompleted = habitsInfo.completedHabits.includes(habitId)
-    const next = isCompleted
-      ? habitsInfo.completedHabits.filter(id => id !== habitId)
-      : [...habitsInfo.completedHabits, habitId]
+    const delta = isCompleted ? -1 : +1
 
-    setHabitsInfo({ ...habitsInfo, completedHabits: next })
+    const optimistic: HabitsInfo = {
+      ...habitsInfo,
+      completedHabits: isCompleted
+        ? habitsInfo.completedHabits.filter((id) => id !== habitId)
+        : [...habitsInfo.completedHabits, habitId],
+    }
+
+    setHabitsInfo(optimistic)
+    onChangeCompleted?.(delta)
 
     try {
       await api.patch(`/habits/${habitId}/toggle`)
-      // opcional: poderia validar r.data.completed
+      showToast({
+        title: isCompleted ? 'Habit unchecked' : 'Habit completed',
+        description: dayjs(date).format('[Day] dddd, DD/MM'),
+        type: 'success',
+      })
     } catch (e) {
       // rollback
       setHabitsInfo(habitsInfo)
+      onChangeCompleted?.(-delta)
+      showToast({
+        title: 'Failed to toggle habit',
+        description: 'Try again soon.',
+        type: 'error',
+      })
       console.error('Failed to toggle habit', e)
     }
   }
@@ -68,6 +88,22 @@ export function HabitsList({ date }: HabitsListProps) {
             }
           : prev
       )
+
+      const deletedHabit = habitsInfo?.possibleHabits.find(
+        (h) => h.id === habitId
+      )
+      showToast({
+        title: 'Habit excluded',
+        description: `“${deletedHabit?.title ?? habitId}” has been removed.`,
+        type: 'success',
+      })
+    } catch (err) {
+      showToast({
+        title: 'Error when deleting habit',
+        description: 'Check your connection or try again.',
+        type: 'error',
+      })
+      console.error(err)
     } finally {
       setDeletingId(null)
     }
@@ -82,9 +118,9 @@ export function HabitsList({ date }: HabitsListProps) {
           <div key={habit.id} className='flex items-center gap-3 group'>
             <Checkbox.Root
               checked={checked}
-            onCheckedChange={() => handleToggle(habit.id)}
-            disabled={!isPastOrToday} // opcional: não permite futuro
-            className="flex items-center gap-3 group disabled:opacity-50"
+              onCheckedChange={() => handleToggle(habit.id)}
+              disabled={!isPastOrToday} // opcional: não permite futuro
+              className='flex items-center gap-3 group disabled:opacity-50'
             >
               <div className='h-8 w-8 rounded-lg flex items-center justify-center bg-zinc-700 border-2 border-zinc-800 group-data-[state=checked]:bg-green-500 group-data-[state=checked]:border-green-500'>
                 <Checkbox.Indicator>
@@ -115,13 +151,13 @@ export function HabitsList({ date }: HabitsListProps) {
                   <AlertDialog.Title className='text-lg font-semibold text-white'>
                     Remove habit?
                   </AlertDialog.Title>
-                    <AlertDialog.Description className='mt-2 text-sm text-zinc-400'>
+                  <AlertDialog.Description className='mt-2 text-sm text-zinc-400'>
                     This action cannot be undone. The habit{' '}
                     <span className='text-zinc-200 font-medium'>
                       “{habit.title}”
                     </span>{' '}
                     will be permanently deleted.
-                    </AlertDialog.Description>
+                  </AlertDialog.Description>
 
                   <div className='mt-6 flex justify-end gap-3'>
                     <AlertDialog.Cancel asChild>
