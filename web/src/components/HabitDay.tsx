@@ -20,7 +20,6 @@ export function HabitDay({
 }: HabitDayProps) {
   const [localCompleted, setLocalCompleted] = useState(completed)
 
-  // se props.completed mudar (ex.: troca de mês), sincroniza:
   useEffect(() => setLocalCompleted(completed), [completed])
 
   const completedPercentage =

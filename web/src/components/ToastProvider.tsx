@@ -31,8 +31,7 @@ export function AppToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = React.useCallback(
     (opts: { title: string; description?: string; type?: ToastType }) => {
-      setState({ open: false }) // reset
-      // pequeno delay para garantir re-render
+      setState({ open: false })
       setTimeout(() => setState({ open: true, ...opts }), 0)
     },
     []
@@ -54,7 +53,7 @@ export function AppToastProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastCtx.Provider value={{ showToast }}>
-      <Toast.Provider swipeDirection='right'>
+      <Toast.Provider swipeDirection='right'  duration={2500}>
         {children}
 
         <Toast.Root
@@ -70,8 +69,7 @@ export function AppToastProvider({ children }: { children: React.ReactNode }) {
               </Toast.Description>
             ) : null}
           </div>
-
-          {/* barra inferior de progresso */}
+          
           <div className={`h-1 w-full ${barByType[type]} rounded-b-2xl`} />
         </Toast.Root>
 

@@ -54,7 +54,7 @@ export function SummaryTable() {
   }
 
   return (
-    <div className='w-full flex flex-col md:flex-row'>
+    <div className='w-full flex flex-col h-full max-h-[30rem] md:flex-row'>
       <div className='grid gap-3 mb-3 md:mb-0 grid-cols-7 grid-flow-col md:grid-cols-1 md:grid-rows-7 md:grid-flow-row'>
         {weekDays.map((w, i) => (
           <div
