@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "studio": "npx prisma studio"
+    "studio": "npx prisma studio",
+    "test": "ts-node-dev --respawn --transpile-only -r dotenv/config src/server.ts",
+    "start": "node -r dotenv/config dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +16,7 @@
     "@fastify/cors": "^8.2.0",
     "@prisma/client": "^4.9.0",
     "dayjs": "^1.11.7",
+    "dotenv": "^17.2.1",
     "fastify": "^4.11.0",
     "zod": "^3.20.6"
   },

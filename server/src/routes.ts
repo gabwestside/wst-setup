@@ -155,4 +155,38 @@ export async function appRoutes(app: FastifyInstance) {
 
     return summary
   })
+
+  app.delete('/habits/:id', async (request, reply) => {
+    const deleteHabitParams = z.object({
+      id: z.string().uuid(),
+    })
+
+    const { id } = deleteHabitParams.parse(request.params)
+
+    // Verificar se o hábito existe
+    const habit = await prisma.habit.findUnique({
+      where: { id },
+    })
+
+    if (!habit) {
+      return reply.status(404).send({ error: 'Habit not found' })
+    }
+
+    // Deletar os registros relacionados na tabela day_habits
+    await prisma.dayHabit.deleteMany({
+      where: { habit_id: id },
+    })
+
+    // Deletar os registros relacionados na tabela habit_week_days
+    await prisma.habitWeekDays.deleteMany({
+      where: { habit_id: id },
+    })
+
+    // Deletar o hábito
+    await prisma.habit.delete({
+      where: { id },
+    })
+
+    return reply.status(204).send() // Retorna 204 No Content
+  })
 }

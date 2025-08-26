@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import { appRoutes } from './routes'
 import cors from '@fastify/cors'
+import 'dotenv/config'
 
 const app = Fastify()
 
