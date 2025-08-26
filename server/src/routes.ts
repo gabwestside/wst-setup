@@ -1,7 +1,9 @@
 import { FastifyInstance } from 'fastify'
-import dayjs from 'dayjs'
 import { prisma } from './lib/prisma'
 import { z } from 'zod'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+dayjs.extend(utc)
 
 export async function appRoutes(app: FastifyInstance) {
   app.post('/habits', async (request) => {
@@ -72,56 +74,33 @@ export async function appRoutes(app: FastifyInstance) {
     }
   })
 
-  // complete or not complete a habit
-  app.patch('/habits/:id/toggle', async (request) => {
-    // route param => identity parameter
+  app.patch('/habits/:id/toggle', async (request, reply) => {
+    const paramsSchema = z.object({ id: z.string().uuid() })
+    const querySchema = z.object({ date: z.string().datetime().optional() })
 
-    const toggleHabitParams = z.object({
-      id: z.string().uuid(),
-    })
+    const { id } = paramsSchema.parse(request.params)
+    const { date } = querySchema.safeParse(request.query).success
+      ? querySchema.parse(request.query)
+      : { date: undefined }
 
-    const { id } = toggleHabitParams.parse(request.params)
+    const target = date ? dayjs(date) : dayjs()
+    const targetUtcStart = target.utc().startOf('day').toDate()
 
-    const today = dayjs().startOf('day').toDate()
-
-    let day = await prisma.day.findUnique({
-      where: {
-        date: today,
-      },
-    })
-
+    let day = await prisma.day.findUnique({ where: { date: targetUtcStart } })
     if (!day) {
-      day = await prisma.day.create({
-        data: {
-          date: today,
-        },
-      })
+      day = await prisma.day.create({ data: { date: targetUtcStart } })
     }
 
-    const dayHabit = await prisma.dayHabit.findUnique({
-      where: {
-        day_id_habit_id: {
-          day_id: day.id,
-          habit_id: id,
-        },
-      },
+    const existing = await prisma.dayHabit.findUnique({
+      where: { day_id_habit_id: { day_id: day.id, habit_id: id } },
     })
 
-    if (dayHabit) {
-      // remove a completed mark
-      await prisma.dayHabit.delete({
-        where: {
-          id: dayHabit.id,
-        },
-      })
+    if (existing) {
+      await prisma.dayHabit.delete({ where: { id: existing.id } })
+      return reply.status(200).send({ completed: false, date: targetUtcStart })
     } else {
-      // complete the habit
-      await prisma.dayHabit.create({
-        data: {
-          day_id: day.id,
-          habit_id: id,
-        },
-      })
+      await prisma.dayHabit.create({ data: { day_id: day.id, habit_id: id } })
+      return reply.status(200).send({ completed: true, date: targetUtcStart })
     }
   })
 
