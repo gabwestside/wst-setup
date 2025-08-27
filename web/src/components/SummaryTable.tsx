@@ -1,14 +1,11 @@
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/axios'
-import { generateDatesFromCurrentMonth } from '../utils/generate-dates'
+import { generateMonthGridDates } from '../utils/generate-dates'
 import { HabitDay } from './HabitDay'
 
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-const summaryDates = generateDatesFromCurrentMonth()
-
-const minimumSummaryDatesSize = 18 * 7
-const amountOfDaysToFill = minimumSummaryDatesSize - summaryDates.length
+const summaryDates = generateMonthGridDates()
 
 type SummaryItem = {
   id: string
@@ -18,11 +15,19 @@ type SummaryItem = {
 }
 type Summary = SummaryItem[]
 
-export function SummaryTable() {
+interface SummaryTableProps {
+  onLoading: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export function SummaryTable({ onLoading }: SummaryTableProps) {
   const [summary, setSummary] = useState<Summary>([])
 
   useEffect(() => {
-    api.get('/summary').then((response) => setSummary(response.data))
+    onLoading(true)
+    api
+      .get('/summary')
+      .then((response) => setSummary(response.data))
+      .finally(() => onLoading(false))
   }, [])
 
   const summaryByKey = useMemo(() => {
@@ -33,13 +38,11 @@ export function SummaryTable() {
 
   function handleDayCompletedChange(date: Date, delta: number) {
     const key = dayjs(date).format('YYYY-MM-DD')
-
     setSummary((prev) => {
       const idx = prev.findIndex(
         (s) => dayjs(s.date).format('YYYY-MM-DD') === key
       )
       if (idx === -1) return prev
-
       const next = [...prev]
       const item = next[idx]
       next[idx] = {
@@ -53,8 +56,12 @@ export function SummaryTable() {
     })
   }
 
+  const monthNow = dayjs().month()
+  const yearNow = dayjs().year()
+
   return (
-    <div className='w-full flex flex-col h-full max-h-[30rem] md:flex-row'>
+    <div className='w-full flex flex-col h-full max-h-[30rem] md:flex-row md:justify-center relative'>
+      {/* cabeçalho dos dias */}
       <div className='grid gap-3 mb-3 md:mb-0 grid-cols-7 grid-flow-col md:grid-cols-1 md:grid-rows-7 md:grid-flow-row'>
         {weekDays.map((w, i) => (
           <div
@@ -66,10 +73,23 @@ export function SummaryTable() {
         ))}
       </div>
 
+      {/* grade de dias */}
       <div className='grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col'>
         {summaryDates.map((date) => {
-          const key = dayjs(date).format('YYYY-MM-DD')
+          const d = dayjs(date)
+          const isOutsideMonth = d.month() !== monthNow || d.year() !== yearNow
+          const key = d.format('YYYY-MM-DD')
           const s = summaryByKey.get(key)
+
+          if (isOutsideMonth) {
+            return (
+              <div
+                key={date.toString()}
+                className='w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-40 cursor-not-allowed'
+                aria-hidden
+              />
+            )
+          }
 
           return (
             <HabitDay
@@ -81,14 +101,6 @@ export function SummaryTable() {
             />
           )
         })}
-
-        {amountOfDaysToFill > 0 &&
-          Array.from({ length: amountOfDaysToFill }).map((_, i) => (
-            <div
-              key={i}
-              className='w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-40 cursor-not-allowed'
-            />
-          ))}
       </div>
     </div>
   )

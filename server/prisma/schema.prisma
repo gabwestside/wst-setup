@@ -14,6 +14,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// datasource db { // TODO: switch to Postgres in production
+//   provider = "postgresql" 
+//   url      = env("DATABASE_URL")
+// }
+
 model Habit {
   id         String   @id @default(uuid())
   title      String
