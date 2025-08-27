@@ -5,11 +5,28 @@ import 'dotenv/config'
 
 const app = Fastify()
 
-app.register(cors)
+app.register(cors, {
+  origin: process.env.FRONTEND_URL ?? '*',
+  credentials: true,
+})
+
+// app.use(cors({
+//   origin: process.env.FRONTEND_URL?.split(',') ?? '*', // ex: https://seu-front.vercel.app
+//   methods: ['GET','POST','PATCH','PUT','DELETE','OPTIONS'],
+// }))
+
 app.register(appRoutes)
 
-app.listen({
-  port: 3333,
-}).then(() => {
-  console.log('HTTP Server is running!')
+const PORT = Number(process.env.PORT) || 3333
+
+app.listen({ port: PORT, host: '0.0.0.0' }, () => {
+  console.log(`HTTP server running on :${PORT}`)
 })
+
+app.get('/health', (_req, res) => res.send('ok'))
+
+// app.listen({
+//   port: 3333,
+// }).then(() => {
+//   console.log('HTTP Server is running!')
+// })

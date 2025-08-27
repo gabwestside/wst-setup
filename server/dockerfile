@@ -1,0 +1,18 @@
+# ---- build ----
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY server/package*.json server/tsconfig.json ./server/
+RUN cd server && npm ci
+COPY server ./server
+RUN cd server && npm run build
+
+# ---- runtime ----
+FROM node:20-alpine
+WORKDIR /app/server
+COPY --from=build /app/server/dist ./dist
+COPY server/package*.json .
+RUN npm ci --omit=dev && npx prisma generate
+ENV NODE_ENV=production
+ENV PORT=3333
+EXPOSE 3333
+CMD ["sh", "-c", "npx prisma migrate deploy && node -r dotenv/config dist/server.js"]
