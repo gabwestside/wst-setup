@@ -1,4 +1,7 @@
-import dayjs from 'dayjs'
+import dayjsOrig from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import 'dayjs/locale/pt-br'
+dayjsOrig.locale('pt-br')
+dayjsOrig.extend(utc)
 
-dayjs.locale('pt-br')
+export const dayjs = dayjsOrig
