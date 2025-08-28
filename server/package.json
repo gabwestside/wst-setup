@@ -27,8 +27,8 @@
     "@mermaid-js/mermaid-cli": "^9.3.0",
     "prisma": "^4.9.0",
     "prisma-erd-generator": "^1.2.5",
-    "typescript": "^5.x",
-    "tsx": "^4.x"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
