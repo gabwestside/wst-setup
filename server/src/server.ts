@@ -10,11 +10,6 @@ app.register(cors, {
   credentials: true,
 })
 
-// app.use(cors({
-//   origin: process.env.FRONTEND_URL?.split(',') ?? '*', // ex: https://seu-front.vercel.app
-//   methods: ['GET','POST','PATCH','PUT','DELETE','OPTIONS'],
-// }))
-
 app.register(appRoutes)
 
 const PORT = Number(process.env.PORT) || 3333
@@ -24,9 +19,3 @@ app.listen({ port: PORT, host: '0.0.0.0' }, () => {
 })
 
 app.get('/health', (_req, res) => res.send('ok'))
-
-// app.listen({
-//   port: 3333,
-// }).then(() => {
-//   console.log('HTTP Server is running!')
-// })

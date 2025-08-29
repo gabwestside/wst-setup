@@ -21,22 +21,17 @@ async function run() {
   await Promise.all([
     prisma.habit.create({
       data: {
-        id: firstHabitId,
-        title: 'Beber 2L água',
-        created_at: firstHabitCreationDate,
-        weekDays: {
-          create: [{ week_day: 1 }, { week_day: 2 }, { week_day: 3 }],
-        },
-      },
-    }),
-
-    prisma.habit.create({
-      data: {
         id: secondHabitId,
-        title: 'Exercitar',
+        title: 'Workout',
         created_at: secondHabitCreationDate,
         weekDays: {
-          create: [{ week_day: 3 }, { week_day: 4 }, { week_day: 5 }],
+          create: [
+            { week_day: 1 },
+            { week_day: 2 },
+            { week_day: 3 },
+            { week_day: 4 },
+            { week_day: 5 },
+          ],
         },
       },
     }),
@@ -44,7 +39,7 @@ async function run() {
     prisma.habit.create({
       data: {
         id: thirdHabitId,
-        title: 'Dormir 8h',
+        title: 'Sleep 8h',
         created_at: thirdHabitCreationDate,
         weekDays: {
           create: [
