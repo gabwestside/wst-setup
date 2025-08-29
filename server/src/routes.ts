@@ -124,34 +124,31 @@ export async function appRoutes(app: FastifyInstance) {
       })
     }
   })
-
+  
   app.get('/summary', async () => {
-    // [ { date: 17/01, amount: 5, completed: 1 }, { date: 18/01, amount: 2, completed: 2 }, {}]
-    // Query mais complexas, mais condições, relacionamentos => SQL na mão (RAW)
-    // Prisma ORM: RAW SQL => SQLite
-
-    const summary = await prisma.$queryRaw`
-      SELECT 
-        D.id, 
-        D.date,
-        (
-          SELECT
-            cast(count(*) as float)
-          FROM day_habits DH
-          WHERE DH.day_id = D.id
-        ) as completed,
-        (
-          SELECT 
-            cast(count(*) as float)
-          FROM habit_week_days HWD
-          JOIN habits H
-            ON H.id = HWD.habit_id
-          WHERE
-            HWD.week_day = cast(strftime('%w', D.date/1000.0, 'unixepoch') as int)
-            AND H.created_at <= D.date
-        ) as amount
-      FROM days D
-    `
+    // Postgres version
+    const summary = await prisma.$queryRaw<
+      Array<{ id: string; date: Date; completed: number; amount: number }>
+    >`
+    SELECT 
+      d.id,
+      d.date,
+      (
+        SELECT COUNT(*)::int
+        FROM day_habits dh
+        WHERE dh.day_id = d.id
+      ) AS completed,
+      (
+        SELECT COUNT(*)::int
+        FROM habit_week_days hwd
+        JOIN habits h ON h.id = hwd.habit_id
+        WHERE
+          hwd.week_day = EXTRACT(DOW FROM d.date)::int
+          AND h.created_at <= d.date
+      ) AS amount
+    FROM days d
+    ORDER BY d.date;
+  `
 
     return summary
   })
