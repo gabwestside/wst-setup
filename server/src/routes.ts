@@ -1,7 +1,9 @@
-import { FastifyInstance } from 'fastify'
 import dayjs from 'dayjs'
-import { prisma } from './lib/prisma'
+import utc from 'dayjs/plugin/utc'
+import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { prisma } from './lib/prisma'
+dayjs.extend(utc)
 
 export async function appRoutes(app: FastifyInstance) {
   app.post('/habits', async (request) => {
@@ -12,144 +14,86 @@ export async function appRoutes(app: FastifyInstance) {
 
     const { title, weekDays } = createHabitBody.parse(request.body)
 
-    const today = dayjs().startOf('day').toDate()
+    const today = dayjs.utc().startOf('day').toDate()
 
     await prisma.habit.create({
       data: {
         title,
         created_at: today,
         weekDays: {
-          create: weekDays.map((weekDay) => {
-            return {
-              week_day: weekDay,
-            }
-          }),
+          create: weekDays.map((weekDay) => ({ week_day: weekDay })),
         },
       },
     })
   })
 
   app.get('/day', async (request) => {
-    const getDayParams = z.object({
-      date: z.coerce.date(),
-    })
+    const getDayParams = z.object({ date: z.coerce.date() })
 
     const { date } = getDayParams.parse(request.query)
 
-    const parsedDate = dayjs(date).startOf('day')
-    const weekDay = parsedDate.get('day')
+    const parsedDate = dayjs.utc(date).startOf('day') // 👈 convert to UTC
+    const weekDay = parsedDate.day() // 0..6 (UTC)
 
     const possibleHabits = await prisma.habit.findMany({
       where: {
-        created_at: {
-          lte: date,
-        },
-        weekDays: {
-          some: {
-            week_day: weekDay,
-          },
-        },
+        created_at: { lte: parsedDate.toDate() }, // 👈 compare with UTC
+        weekDays: { some: { week_day: weekDay } },
       },
     })
 
     const day = await prisma.day.findUnique({
-      where: {
-        date: parsedDate.toDate(),
-      },
-      include: {
-        dayHabits: true,
-      },
+      where: { date: parsedDate.toDate() }, // 👈 the same UTC date
+      include: { dayHabits: true },
     })
 
-    const completedHabits =
-      day?.dayHabits.map((dayHabit: { habit_id: string }) => {
-        return dayHabit.habit_id
-      }) ?? []
+    const completedHabits = day?.dayHabits.map((dh) => dh.habit_id) ?? []
 
-    return {
-      possibleHabits,
-      completedHabits,
-    }
+    return { possibleHabits, completedHabits }
   })
 
   // complete or not complete a habit
   app.patch('/habits/:id/toggle', async (request) => {
-    // route param => identity parameter
-
-    const toggleHabitParams = z.object({
-      id: z.string().uuid(),
-    })
-
+    const toggleHabitParams = z.object({ id: z.string().uuid() })
     const { id } = toggleHabitParams.parse(request.params)
 
-    const today = dayjs().startOf('day').toDate()
+    const today = dayjs.utc().startOf('day').toDate() // 👈 UTC
 
-    let day = await prisma.day.findUnique({
-      where: {
-        date: today,
-      },
-    })
-
+    let day = await prisma.day.findUnique({ where: { date: today } })
     if (!day) {
-      day = await prisma.day.create({
-        data: {
-          date: today,
-        },
-      })
+      day = await prisma.day.create({ data: { date: today } })
     }
 
     const dayHabit = await prisma.dayHabit.findUnique({
-      where: {
-        day_id_habit_id: {
-          day_id: day.id,
-          habit_id: id,
-        },
-      },
+      where: { day_id_habit_id: { day_id: day.id, habit_id: id } },
     })
 
     if (dayHabit) {
-      // remove a completed mark
-      await prisma.dayHabit.delete({
-        where: {
-          id: dayHabit.id,
-        },
-      })
+      await prisma.dayHabit.delete({ where: { id: dayHabit.id } })
     } else {
-      // complete the habit
-      await prisma.dayHabit.create({
-        data: {
-          day_id: day.id,
-          habit_id: id,
-        },
-      })
+      await prisma.dayHabit.create({ data: { day_id: day.id, habit_id: id } })
     }
   })
-  
+
   app.get('/summary', async () => {
-    // Postgres version
+    // versão Postgres já corrigida
     const summary = await prisma.$queryRaw<
       Array<{ id: string; date: Date; completed: number; amount: number }>
     >`
     SELECT 
       d.id,
       d.date,
-      (
-        SELECT COUNT(*)::int
-        FROM day_habits dh
-        WHERE dh.day_id = d.id
-      ) AS completed,
+      (SELECT COUNT(*)::int FROM day_habits dh WHERE dh.day_id = d.id) AS completed,
       (
         SELECT COUNT(*)::int
         FROM habit_week_days hwd
         JOIN habits h ON h.id = hwd.habit_id
-        WHERE
-          hwd.week_day = EXTRACT(DOW FROM d.date)::int
+        WHERE hwd.week_day = EXTRACT(DOW FROM (d.date AT TIME ZONE 'UTC'))::int
           AND h.created_at <= d.date
       ) AS amount
     FROM days d
     ORDER BY d.date;
   `
-
     return summary
   })
 

@@ -1,8 +1,10 @@
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/axios'
 import { generateMonthGridDates } from '../utils/generate-dates'
 import { HabitDay } from './HabitDay'
+dayjs.extend(utc)
 
 const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const summaryDates = generateMonthGridDates()
@@ -32,15 +34,16 @@ export function SummaryTable({ onLoading }: SummaryTableProps) {
 
   const summaryByKey = useMemo(() => {
     const m = new Map<string, SummaryItem>()
-    for (const s of summary) m.set(dayjs(s.date).format('YYYY-MM-DD'), s)
+    for (const s of summary) m.set(dayjs.utc(s.date).format('YYYY-MM-DD'), s) // 👈 UTC
     return m
   }, [summary])
 
   function handleDayCompletedChange(date: Date, delta: number) {
-    const key = dayjs(date).format('YYYY-MM-DD')
+    const key = dayjs.utc(date).format('YYYY-MM-DD') // 👈 UTC
+
     setSummary((prev) => {
       const idx = prev.findIndex(
-        (s) => dayjs(s.date).format('YYYY-MM-DD') === key
+        (s) => dayjs.utc(s.date).format('YYYY-MM-DD') === key
       )
       if (idx === -1) return prev
       const next = [...prev]
@@ -52,6 +55,7 @@ export function SummaryTable({ onLoading }: SummaryTableProps) {
           Math.min(item.amount, (item.completed ?? 0) + delta)
         ),
       }
+
       return next
     })
   }
@@ -61,7 +65,6 @@ export function SummaryTable({ onLoading }: SummaryTableProps) {
 
   return (
     <div className='w-full flex flex-col h-full max-h-[30rem] md:flex-row md:justify-center relative'>
-      {/* cabeçalho dos dias */}
       <div className='grid gap-3 mb-3 md:mb-0 grid-cols-7 grid-flow-col md:grid-cols-1 md:grid-rows-7 md:grid-flow-row'>
         {weekDays.map((w, i) => (
           <div
@@ -72,8 +75,7 @@ export function SummaryTable({ onLoading }: SummaryTableProps) {
           </div>
         ))}
       </div>
-
-      {/* grade de dias */}
+      
       <div className='grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col'>
         {summaryDates.map((date) => {
           const d = dayjs(date)
