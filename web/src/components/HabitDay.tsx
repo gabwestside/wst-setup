@@ -1,9 +1,13 @@
 import * as Popover from '@radix-ui/react-popover'
-import { ProgressBar } from './ProgressBar'
-import dayjs from 'dayjs'
 import clsx from 'clsx'
-import { HabitsList } from './HabitsList'
+import dayjsOrig from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import { useEffect, useState } from 'react'
+import { HabitsList } from './HabitsList'
+import { ProgressBar } from './ProgressBar'
+
+dayjsOrig.extend(utc)
+const dayjs = dayjsOrig
 
 interface HabitDayProps {
   date: Date
@@ -25,14 +29,15 @@ export function HabitDay({
   const completedPercentage =
     amount > 0 ? Math.round((localCompleted / amount) * 100) : 0
 
-  const dayAndMonth = dayjs(date).format('DD/MM')
-  const dayOfWeek = dayjs(date).format('dddd')
-  const isCurrentDay = dayjs(date).isSame(dayjs().startOf('day'), 'day')
-
   function handleDelta(delta: number) {
     setLocalCompleted((c) => Math.max(0, Math.min(amount, c + delta)))
     onCompletedChange?.(date, delta)
   }
+
+  const dayAndMonth = dayjs.utc(date).format('DD/MM')
+  const dayOfWeek = dayjs.utc(date).format('dddd')
+  const todayUtc = dayjs.utc().startOf('day')
+  const isCurrentDay = dayjs.utc(date).isSame(todayUtc)
 
   return (
     <Popover.Root>
