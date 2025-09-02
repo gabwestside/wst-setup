@@ -53,36 +53,40 @@ export async function appRoutes(app: FastifyInstance) {
   })
 
   // complete or not complete a habit
-app.patch('/habits/:id/toggle', async (request) => {
-  const toggleHabitParams = z.object({ id: z.string().uuid() })
-  const toggleHabitQuery = z.object({
-    date: z.coerce.date().optional(), // <- optional
+  app.patch('/habits/:id/toggle', async (request) => {
+    const toggleHabitParams = z.object({ id: z.string().uuid() })
+    const toggleHabitQuery = z.object({
+      date: z.coerce.date().optional(), // <- optional
+    })
+
+    const { id } = toggleHabitParams.parse(request.params)
+    const { date } = toggleHabitQuery.parse(request.query)
+
+    // toggle target = date received (UTC) or today (UTC)
+    const targetDay = dayjs
+      .utc(date ?? new Date())
+      .startOf('day')
+      .toDate()
+
+    let day = await prisma.day.findUnique({ where: { date: targetDay } })
+
+    if (!day) {
+      day = await prisma.day.create({ data: { date: targetDay } })
+    }
+
+    const dayHabit = await prisma.dayHabit.findUnique({
+      where: { day_id_habit_id: { day_id: day.id, habit_id: id } },
+    })
+
+    if (dayHabit) {
+      await prisma.dayHabit.delete({ where: { id: dayHabit.id } })
+    } else {
+      await prisma.dayHabit.create({ data: { day_id: day.id, habit_id: id } })
+    }
+
+    return { ok: true }
   })
 
-  const { id } = toggleHabitParams.parse(request.params)
-  const { date } = toggleHabitQuery.parse(request.query)
-
-  // toggle target = date received (UTC) or today (UTC)
-  const targetDay = dayjs.utc(date ?? new Date()).startOf('day').toDate()
-
-  let day = await prisma.day.findUnique({ where: { date: targetDay } })
-
-  if (!day) {
-    day = await prisma.day.create({ data: { date: targetDay } })
-  }
-  
-  const dayHabit = await prisma.dayHabit.findUnique({
-    where: { day_id_habit_id: { day_id: day.id, habit_id: id } },
-  })
-
-  if (dayHabit) {
-    await prisma.dayHabit.delete({ where: { id: dayHabit.id } })
-  } else {
-    await prisma.dayHabit.create({ data: { day_id: day.id, habit_id: id } })
-  }
-
-  return { ok: true }
-})
   app.get('/summary', async () => {
     // versão Postgres já corrigida
     const summary = await prisma.$queryRaw<
