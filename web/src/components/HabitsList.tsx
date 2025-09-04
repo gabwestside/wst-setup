@@ -1,11 +1,10 @@
-import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as Checkbox from '@radix-ui/react-checkbox'
-import dayjsOrig from 'dayjs'
-import utc from 'dayjs/plugin/utc'
+import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import { Check, Trash } from 'phosphor-react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/axios'
-import { Skeleton } from './ui/Skeleton'
+import dayjsOrig from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import { useToast } from './ui/ToastProvider'
 
 dayjsOrig.extend(utc)
@@ -14,23 +13,25 @@ const dayjs = dayjsOrig
 interface HabitsListProps {
   date: Date
   onChangeCompleted?: (delta: number) => void
+  readOnly?: boolean
 }
 
 type HabitsInfo = {
-  possibleHabits: {
-    id: string
-    title: string
-    created_at: string
-  }[]
+  possibleHabits: { id: string; title: string; created_at: string }[]
   completedHabits: string[]
 }
 
-export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
+export function HabitsList({
+  date,
+  onChangeCompleted,
+  readOnly = false,
+}: HabitsListProps) {
   const { showToast } = useToast()
   const [habitsInfo, setHabitsInfo] = useState<HabitsInfo>()
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingToggle, setPendingToggle] = useState<{
     habitId: string
@@ -56,13 +57,11 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
 
     api
       .get('day', { params: { date: dayjs.utc(date).toDate().toISOString() } })
-      .then((r) => {
-        if (alive) setHabitsInfo(r.data)
-      })
+      .then((r) => alive && setHabitsInfo(r.data))
       .catch(() => {
         if (alive) {
           setHabitsInfo({ possibleHabits: [], completedHabits: [] })
-          showToast({
+          showToast?.({
             title: 'Could not load this day',
             description: 'Please try again.',
             type: 'error',
@@ -77,7 +76,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   }, [date])
 
   async function applyToggle(habitId: string, willCheck: boolean) {
-    if (!habitsInfo) return
+    if (!habitsInfo || readOnly) return
     setTogglingId(habitId)
 
     const delta = willCheck ? +1 : -1
@@ -94,13 +93,13 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
     try {
       await api.patch(
         `/habits/${habitId}/toggle`,
-        {}, // corpo JSON vazio
+        {},
         {
           params: { date: dayjs.utc(date).toDate().toISOString() },
           headers: { 'Content-Type': 'application/json' },
         }
       )
-      showToast({
+      showToast?.({
         title: willCheck ? 'Habit completed' : 'Habit unchecked',
         description: dayjs.utc(date).format('[Day] dddd, DD/MM'),
         type: 'success',
@@ -108,7 +107,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
     } catch (e) {
       setHabitsInfo(snapshot)
       onChangeCompleted?.(-delta)
-      showToast({
+      showToast?.({
         title: 'Failed to toggle habit',
         description: 'Try again soon.',
         type: 'error',
@@ -120,16 +119,14 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   }
 
   async function handleToggleClick(habitId: string) {
-    if (!habitsInfo || isLoading || togglingId) return
+    if (!habitsInfo || isLoading || togglingId || readOnly) return
     const checked = habitsInfo.completedHabits.includes(habitId)
     const willCheck = !checked
-
     if (isPastOnly) {
       setPendingToggle({ habitId, willCheck })
       setConfirmOpen(true)
       return
     }
-
     applyToggle(habitId, willCheck)
   }
 
@@ -142,7 +139,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   }
 
   async function handleDeleteHabit(habitId: string) {
-    if (isLoading || togglingId) return
+    if (isLoading || togglingId || readOnly) return
     try {
       setDeletingId(habitId)
       await api.delete(`/habits/${habitId}`)
@@ -159,17 +156,16 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
             }
           : prev
       )
-
       const deletedHabit = habitsInfo?.possibleHabits.find(
         (h) => h.id === habitId
       )
-      showToast({
+      showToast?.({
         title: 'Habit excluded',
         description: `“${deletedHabit?.title ?? habitId}” has been removed.`,
         type: 'success',
       })
     } catch (err) {
-      showToast({
+      showToast?.({
         title: 'Error when deleting habit',
         description: 'Check your connection or try again.',
         type: 'error',
@@ -180,8 +176,21 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
     }
   }
 
+  // Skeleton
   if (isLoading) {
-    return <Skeleton />
+    return (
+      <div className='mt-6 flex flex-col gap-3'>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className='flex items-center gap-3 animate-pulse'>
+            <div className='h-8 w-8 rounded-lg bg-zinc-700/60 border-2 border-zinc-800' />
+            <div className='h-5 w-56 rounded bg-zinc-700/60' />
+            {!readOnly && (
+              <div className='ml-auto h-4 w-4 rounded bg-zinc-700/60' />
+            )}
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -189,6 +198,31 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
       <div className='mt-6 flex flex-col gap-3'>
         {habitsInfo?.possibleHabits.map((habit) => {
           const checked = habitsInfo.completedHabits.includes(habit.id)
+
+          if (readOnly) {
+            // --- modo somente leitura: sem checkbox e sem excluir ---
+            return (
+              <div key={habit.id} className='flex items-center gap-3'>
+                <div
+                  className={`
+                    h-8 w-8 rounded-lg flex items-center justify-center border-2
+                    ${checked ? 'bg-green-500 border-green-500' : 'bg-zinc-700 border-zinc-800'}
+                  `}
+                >
+                  {checked && <Check size={20} className='text-white' />}
+                </div>
+                <span
+                  className={`font-semibold text-xl leading-tight ${
+                    checked ? 'line-through text-zinc-400' : 'text-white'
+                  }`}
+                >
+                  {habit.title}
+                </span>
+              </div>
+            )
+          }
+
+          // --- modo interativo normal ---
           const rowDisabled =
             !isPastOrToday ||
             isLoading ||
@@ -219,6 +253,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
                 </span>
               </Checkbox.Root>
 
+              {/* Remover (apenas no modo interativo) */}
               <AlertDialog.Root>
                 <AlertDialog.Trigger asChild>
                   <button
@@ -269,43 +304,44 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
         })}
       </div>
 
-      <AlertDialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className='fixed inset-0 bg-black/60' />
-        </AlertDialog.Portal>
-        <AlertDialog.Portal>
-          <AlertDialog.Content className='fixed left-1/2 top-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 p-6 shadow-xl border border-zinc-800'>
-            <AlertDialog.Title className='text-lg font-semibold text-white'>
-              Confirm change on past day
-            </AlertDialog.Title>
-            <AlertDialog.Description className='mt-2 text-sm text-zinc-400'>
-              You are changing a habit on{' '}
-              <b>{dayjs.utc(date).format('dddd, DD/MM/YYYY')}</b>. Do you want
-              to continue?
-            </AlertDialog.Description>
+      {/* Confirmação (apenas no modo interativo) */}
+      {!readOnly && (
+        <AlertDialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialog.Portal>
+            <AlertDialog.Overlay className='fixed inset-0 bg-black/60' />
+            <AlertDialog.Content className='fixed left-1/2 top-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 p-6 shadow-xl border border-zinc-800'>
+              <AlertDialog.Title className='text-lg font-semibold text-white'>
+                Confirm change on past day
+              </AlertDialog.Title>
+              <AlertDialog.Description className='mt-2 text-sm text-zinc-400'>
+                You are changing a habit on{' '}
+                <b>{dayjs.utc(date).format('dddd, DD/MM/YYYY')}</b>. Do you want
+                to continue?
+              </AlertDialog.Description>
 
-            <div className='mt-6 flex justify-end gap-3'>
-              <AlertDialog.Cancel asChild>
-                <button
-                  onClick={() => setPendingToggle(null)}
-                  className='px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-800 transition'
-                >
-                  Cancel
-                </button>
-              </AlertDialog.Cancel>
+              <div className='mt-6 flex justify-end gap-3'>
+                <AlertDialog.Cancel asChild>
+                  <button
+                    onClick={() => setPendingToggle(null)}
+                    className='px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-800 transition'
+                  >
+                    Cancel
+                  </button>
+                </AlertDialog.Cancel>
 
-              <AlertDialog.Action asChild>
-                <button
-                  onClick={confirmPastToggle}
-                  className='px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 transition'
-                >
-                  Confirm
-                </button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+                <AlertDialog.Action asChild>
+                  <button
+                    onClick={confirmPastToggle}
+                    className='px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 transition'
+                  >
+                    Confirm
+                  </button>
+                </AlertDialog.Action>
+              </div>
+            </AlertDialog.Content>
+          </AlertDialog.Portal>
+        </AlertDialog.Root>
+      )}
     </>
   )
 }

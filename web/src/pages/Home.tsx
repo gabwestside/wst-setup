@@ -5,7 +5,7 @@ import { LoadingSquares } from '../components/ui/Loading'
 import { hasPin } from '../utils/has-pin'
 import PinGate from '../components/ui/PinGate'
 
-export function Home() {
+export function HomePage() {
   const [loading, setLoading] = useState(true)
   const [granted, setGranted] = useState<boolean>(hasPin())
   const [gateOpen, setGateOpen] = useState<boolean>(!hasPin())

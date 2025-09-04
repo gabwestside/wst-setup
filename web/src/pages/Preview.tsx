@@ -3,6 +3,7 @@ import utc from 'dayjs/plugin/utc'
 import { useMemo } from 'react'
 import { generateMonthGridDates } from '../utils/generate-dates'
 import { SummaryTable } from '../components/SummaryTable'
+import { Header } from '../components/ui/Header'
 
 dayjsOrig.extend(utc)
 const dayjs = dayjsOrig
@@ -22,7 +23,7 @@ type SummaryItem = {
   completed: number
 }
 
-export default function PreviewPage() {
+export function PreviewPage() {
   // current month grid (UTC)
   const dates = generateMonthGridDates(new Date())
   const monthNow = dayjs.utc().month()
@@ -62,7 +63,7 @@ export default function PreviewPage() {
 
   return (
     <div className='flex gap-10 flex-col mx-auto max-w-5xl px-6 py-8'>
-      <h1 className='text-3xl font-extrabold text-white'>habits (preview)</h1>
+      <Header readOnly />
 
       <SummaryTable
         className='mt-10'

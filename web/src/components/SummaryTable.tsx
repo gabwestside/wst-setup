@@ -71,9 +71,7 @@ export function SummaryTable({
   const [summary, setSummary] = useState<Summary>(summaryData ?? [])
   // selected month (UTC)
   const [currentMonth, setCurrentMonth] = useState(() =>
-    dayjs
-      .utc(currentMonthProp ?? dayjs.utc().toDate())
-      .startOf('month')
+    dayjs.utc(currentMonthProp ?? dayjs.utc().toDate()).startOf('month')
   )
 
   // loads summary once (only if it wasn't injected and isn't readOnly)
@@ -148,20 +146,20 @@ export function SummaryTable({
   }
 
   return (
-    <div className="w-full flex flex-col h-full max-h-[30rem] md:flex-row md:justify-center relative">
+    <div className='w-full flex flex-col h-full max-h-[30rem] md:flex-row md:justify-center relative'>
       {/* Month navigation */}
-      <div className="mb-4 w-full flex justify-center items-center gap-3 md:absolute md:-top-12">
+      <div className='mb-4 w-full flex justify-center items-center gap-3 md:absolute md:-top-12'>
         <button
           onClick={goPrevMonth}
-          className="px-3 py-1 rounded-lg border border-violet-500 hover:border-violet-300 transition"
-          aria-label="Previous month"
-          title="Previous month"
+          className='px-3 py-1 rounded-lg border border-violet-500 hover:border-violet-300 transition'
+          aria-label='Previous month'
+          title='Previous month'
         >
           ←
         </button>
 
         <select
-          className="border border-violet-500 hover:border-violet-300 font-semibold bg-zinc-900 text-white rounded-md px-3 py-1.5 text-sm"
+          className='border border-violet-500 hover:border-violet-300 font-semibold bg-zinc-900 text-white rounded-md px-3 py-1.5 text-sm'
           value={`${yearNow}-${monthNow}`}
           onChange={onSelectMonth}
         >
@@ -169,7 +167,7 @@ export function SummaryTable({
             <option
               key={m.format('YYYY-MM')}
               value={`${m.year()}-${m.month()}`}
-              className="bg-zinc-900 text-white"
+              className='bg-zinc-900 text-white'
             >
               {m.format('MMMM YYYY')}
             </option>
@@ -178,20 +176,20 @@ export function SummaryTable({
 
         <button
           onClick={goNextMonth}
-          className="px-3 py-1 rounded-lg border border-violet-500 hover:border-violet-300 transition"
-          aria-label="Next month"
-          title="Next month"
+          className='px-3 py-1 rounded-lg border border-violet-500 hover:border-violet-300 transition'
+          aria-label='Next month'
+          title='Next month'
         >
           →
         </button>
       </div>
 
       {/* Day header (S M T W T F S) */}
-      <div className="grid gap-3 mb-3 md:mb-0 grid-cols-7 grid-flow-col md:grid-cols-1 md:grid-rows-7 md:grid-flow-row">
+      <div className='grid gap-3 mb-3 md:mb-0 grid-cols-7 grid-flow-col md:grid-cols-1 md:grid-rows-7 md:grid-flow-row'>
         {weekDays.map((w, i) => (
           <div
             key={i}
-            className="text-zinc-400 text-sm md:text-xl h-8 w-8 md:h-10 md:w-10 font-bold flex items-center justify-center"
+            className='text-zinc-400 text-sm md:text-xl h-8 w-8 md:h-10 md:w-10 font-bold flex items-center justify-center'
           >
             {w}
           </div>
@@ -199,7 +197,7 @@ export function SummaryTable({
       </div>
 
       {/* Day grid */}
-      <div className="grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col">
+      <div className='grid gap-3 md:ml-4 grid-cols-7 grid-flow-row md:grid-cols-none md:grid-rows-7 md:grid-flow-col'>
         {summaryDates.map((date) => {
           const d = dayjs.utc(date)
           const isOutsideMonth = d.month() !== monthNow || d.year() !== yearNow
@@ -211,52 +209,43 @@ export function SummaryTable({
             return (
               <div
                 key={date.toString()}
-                className="w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-40 cursor-not-allowed"
+                className='w-10 h-10 bg-zinc-900 border-2 border-zinc-800 rounded-lg opacity-40 cursor-not-allowed'
                 aria-hidden
               />
             )
           }
 
-          if (readOnly) {
-            // preview: no interaction
+          // Em readOnly: SEM overlay (pode abrir popover para ver lista do dia)
+          if (!readOnly && isFuture) {
             return (
-              <ReadonlyDay
-                key={date.toString()}
-                date={date}
-                amount={s?.amount ?? 0}
-                completed={s?.completed ?? 0}
-                dimmed={isFuture}
-              />
-            )
-          }
-
-          if (isFuture) {
-            // dashboard: future day disabled (overlay)
-            return (
-              <div key={date.toString()} className="relative">
-                <div className="opacity-60">
+              <div key={date.toString()} className='relative'>
+                <div className='opacity-60'>
                   <HabitDay
                     date={date}
                     amount={s?.amount ?? 0}
                     completed={s?.completed ?? 0}
                     onCompletedChange={handleDayCompletedChange}
+                    readOnly={false}
                   />
                 </div>
                 <div
-                  className="absolute inset-0 rounded-lg border-2 border-zinc-800 bg-zinc-900/60 cursor-not-allowed"
+                  className='absolute inset-0 rounded-lg border-2 border-zinc-800 bg-zinc-900/60 cursor-not-allowed'
                   aria-hidden
                 />
               </div>
             )
           }
-          
+
           return (
             <HabitDay
               key={date.toString()}
               date={date}
               amount={s?.amount ?? 0}
               completed={s?.completed ?? 0}
-              onCompletedChange={handleDayCompletedChange}
+              onCompletedChange={
+                readOnly ? undefined : handleDayCompletedChange
+              }
+              readOnly={readOnly}
             />
           )
         })}
