@@ -46,7 +46,7 @@ export function SharePage() {
   }, [])
 
   return (
-    <div className='flex  flex-col gap-10 mx-auto max-w-5xl px-6 py-8'>
+    <div className='flex flex-col gap-10 mx-auto max-w-5xl px-6 py-8'>
       <Header readOnly />
 
       {loading ? (

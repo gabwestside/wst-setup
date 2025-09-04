@@ -21,6 +21,10 @@ export function HomePage() {
           <div className='w-full max-w-5xl px-6 flex flex-col gap-16'>
             <Header />
             <SummaryTable onLoading={setLoading} />
+
+            <a href="/share" className='text-zinc-600 ml-auto hover:underline'>
+              Share
+            </a>
           </div>
           {loading && (
             <div className='absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-10'>
