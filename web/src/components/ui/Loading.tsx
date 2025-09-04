@@ -22,7 +22,7 @@ export function LoadingSquares({
     <div
       className={`flex items-center gap-${gap}`}
       role='status'
-      aria-label='carregando'
+      aria-label='loading'
     >
       {squares.map((_, i) => (
         <div

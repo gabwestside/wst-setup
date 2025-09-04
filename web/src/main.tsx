@@ -1,12 +1,16 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { App } from './App'
-import { AppToastProvider } from './components/ToastProvider'
+import PreviewPage from './pages/Preview'
+import { AppToastProvider } from './components/ui/ToastProvider'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AppToastProvider>
-      <App />
-    </AppToastProvider>
-  </React.StrictMode>
+createRoot(document.getElementById('root')!).render(
+  <AppToastProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<App />} />
+        <Route path='/preview' element={<PreviewPage />} />
+      </Routes>
+    </BrowserRouter>
+  </AppToastProvider>
 )

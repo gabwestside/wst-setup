@@ -4,7 +4,7 @@ import dayjsOrig from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import { useEffect, useState } from 'react'
 import { HabitsList } from './HabitsList'
-import { ProgressBar } from './ProgressBar'
+import { ProgressBar } from './ui/ProgressBar'
 
 dayjsOrig.extend(utc)
 const dayjs = dayjsOrig

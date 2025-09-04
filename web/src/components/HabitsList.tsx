@@ -1,12 +1,12 @@
-import * as Checkbox from '@radix-ui/react-checkbox'
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
+import * as Checkbox from '@radix-ui/react-checkbox'
+import dayjsOrig from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import { Check, Trash } from 'phosphor-react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/axios'
-import dayjsOrig from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import { useToast } from './ToastProvider'
-import { Skeleton } from './Skeleton'
+import { Skeleton } from './ui/Skeleton'
+import { useToast } from './ui/ToastProvider'
 
 dayjsOrig.extend(utc)
 const dayjs = dayjsOrig

@@ -2,7 +2,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import { Check } from 'phosphor-react'
 import * as Checkbox from '@radix-ui/react-checkbox'
 import { api } from '../lib/axios'
-import { useToast } from './ToastProvider'
+import { useToast } from './ui/ToastProvider'
 
 const availableWeekDays = [
   'Sunday',
