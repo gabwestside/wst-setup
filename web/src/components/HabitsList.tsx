@@ -6,6 +6,7 @@ import { api } from '../lib/axios'
 import dayjsOrig from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import { useToast } from './ToastProvider'
+import { Skeleton } from './Skeleton'
 
 dayjsOrig.extend(utc)
 const dayjs = dayjsOrig
@@ -27,19 +28,21 @@ type HabitsInfo = {
 export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   const { showToast } = useToast()
   const [habitsInfo, setHabitsInfo] = useState<HabitsInfo>()
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingToggle, setPendingToggle] = useState<{
     habitId: string
     willCheck: boolean
   } | null>(null)
-  
+
   const isPastOrToday = useMemo(() => {
     const target = dayjs.utc(date).startOf('day')
     const today = dayjs.utc().startOf('day')
     return target.isBefore(today) || target.isSame(today)
   }, [date])
-  
+
   const isPastOnly = useMemo(() => {
     const target = dayjs.utc(date).startOf('day')
     const today = dayjs.utc().startOf('day')
@@ -47,15 +50,37 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   }, [date])
 
   useEffect(() => {
+    let alive = true
+    setIsLoading(true)
+    setHabitsInfo(undefined)
+
     api
       .get('day', { params: { date: dayjs.utc(date).toDate().toISOString() } })
-      .then((r) => setHabitsInfo(r.data))
+      .then((r) => {
+        if (alive) setHabitsInfo(r.data)
+      })
+      .catch(() => {
+        if (alive) {
+          setHabitsInfo({ possibleHabits: [], completedHabits: [] })
+          showToast({
+            title: 'Could not load this day',
+            description: 'Please try again.',
+            type: 'error',
+          })
+        }
+      })
+      .finally(() => alive && setIsLoading(false))
+
+    return () => {
+      alive = false
+    }
   }, [date])
-  
+
   async function applyToggle(habitId: string, willCheck: boolean) {
     if (!habitsInfo) return
+    setTogglingId(habitId)
+
     const delta = willCheck ? +1 : -1
-    
     const snapshot = habitsInfo
     const next: HabitsInfo = {
       ...snapshot,
@@ -69,20 +94,18 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
     try {
       await api.patch(
         `/habits/${habitId}/toggle`,
-        {},
+        {}, // corpo JSON vazio
         {
           params: { date: dayjs.utc(date).toDate().toISOString() },
           headers: { 'Content-Type': 'application/json' },
         }
       )
-
       showToast({
         title: willCheck ? 'Habit completed' : 'Habit unchecked',
         description: dayjs.utc(date).format('[Day] dddd, DD/MM'),
         type: 'success',
       })
     } catch (e) {
-      // rollback
       setHabitsInfo(snapshot)
       onChangeCompleted?.(-delta)
       showToast({
@@ -91,23 +114,25 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
         type: 'error',
       })
       console.error('Failed to toggle habit', e)
+    } finally {
+      setTogglingId(null)
     }
   }
-  
+
   async function handleToggleClick(habitId: string) {
-    if (!habitsInfo) return
+    if (!habitsInfo || isLoading || togglingId) return
     const checked = habitsInfo.completedHabits.includes(habitId)
     const willCheck = !checked
-    
+
     if (isPastOnly) {
       setPendingToggle({ habitId, willCheck })
       setConfirmOpen(true)
       return
     }
-    
+
     applyToggle(habitId, willCheck)
   }
-  
+
   async function confirmPastToggle() {
     if (!pendingToggle) return
     const { habitId, willCheck } = pendingToggle
@@ -117,6 +142,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
   }
 
   async function handleDeleteHabit(habitId: string) {
+    if (isLoading || togglingId) return
     try {
       setDeletingId(habitId)
       await api.delete(`/habits/${habitId}`)
@@ -154,19 +180,33 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
     }
   }
 
+  if (isLoading) {
+    return <Skeleton />
+  }
+
   return (
     <>
       <div className='mt-6 flex flex-col gap-3'>
         {habitsInfo?.possibleHabits.map((habit) => {
           const checked = habitsInfo.completedHabits.includes(habit.id)
+          const rowDisabled =
+            !isPastOrToday ||
+            isLoading ||
+            togglingId === habit.id ||
+            deletingId === habit.id
 
           return (
-            <div key={habit.id} className='flex items-center gap-3 group'>
+            <div
+              key={habit.id}
+              className={`flex items-center gap-3 group ${
+                rowDisabled ? 'opacity-60' : ''
+              }`}
+            >
               <Checkbox.Root
                 checked={checked}
                 onCheckedChange={() => handleToggleClick(habit.id)}
-                disabled={!isPastOrToday}
-                className='flex items-center gap-3 group disabled:opacity-50'
+                disabled={rowDisabled}
+                className='flex items-center gap-3 group disabled:opacity-60'
               >
                 <div className='h-8 w-8 rounded-lg flex items-center justify-center bg-zinc-700 border-2 border-zinc-800 group-data-[state=checked]:bg-green-500 group-data-[state=checked]:border-green-500'>
                   <Checkbox.Indicator>
@@ -178,13 +218,13 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
                   {habit.title}
                 </span>
               </Checkbox.Root>
-              
+
               <AlertDialog.Root>
                 <AlertDialog.Trigger asChild>
                   <button
                     aria-label={`Remover hábito ${habit.title}`}
                     className='ml-auto text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-50'
-                    disabled={deletingId === habit.id}
+                    disabled={rowDisabled}
                   >
                     <Trash size={20} />
                   </button>
@@ -228,10 +268,12 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
           )
         })}
       </div>
-      
+
       <AlertDialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className='fixed inset-0 bg-black/60' />
+        </AlertDialog.Portal>
+        <AlertDialog.Portal>
           <AlertDialog.Content className='fixed left-1/2 top-1/2 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 p-6 shadow-xl border border-zinc-800'>
             <AlertDialog.Title className='text-lg font-semibold text-white'>
               Confirm change on past day
@@ -245,9 +287,7 @@ export function HabitsList({ date, onChangeCompleted }: HabitsListProps) {
             <div className='mt-6 flex justify-end gap-3'>
               <AlertDialog.Cancel asChild>
                 <button
-                  onClick={() => {
-                    setPendingToggle(null)
-                  }}
+                  onClick={() => setPendingToggle(null)}
                   className='px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-800 transition'
                 >
                   Cancel
